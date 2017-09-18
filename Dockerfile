@@ -1,14 +1,9 @@
 # Modified from https://hub.docker.com/r/leafney/ubuntu-mysql/
-FROM ubuntu:16.06
+FROM ubuntu:16.04
 
-# supress warnings such as, debconf: unable to initialize frontend: Dialog ...
-RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
-
-# install openssh-server, openjdk and wget
-RUN apt-get -qq update && apt-get -qq install -y openssh-server wget
-
-# install vim, can live without it
-RUN apt-get -qq install -y vim
+# install openssh-server and wget
+RUN apt-get -qq update && apt-get -qq install -y openssh-server wget vim
+RUN apt-get -qq update && apt-get -qq install -y build-essential libmysqlclient-dev
 RUN echo "set nu" >> ~/.vimrc 
 
 RUN echo "deb http://cn.archive.ubuntu.com/ubuntu/ xenial main restricted universe multiverse" >> /etc/apt/sources.list
@@ -31,7 +26,7 @@ RUN sed -i -e "$ a [client]\n\n[mysql]\n\n[mysqld]"  /etc/mysql/my.cnf && \
 	sed -i -e "s/\(\[mysql\]\)/\1\ndefault-character-set = utf8/g" /etc/mysql/my.cnf && \
 	sed -i -e "s/\(\[mysqld\]\)/\1\ninit_connect='SET NAMES utf8'\ncharacter-set-server = utf8\ncollation-server=utf8_unicode_ci\nbind-address = 0.0.0.0/g" /etc/mysql/my.cnf
 
-VOLUME /var/lib/mysql
+# VOLUME /var/lib/mysql
 
 COPY ./startup.sh /root/startup.sh
 RUN chmod +x /root/startup.sh
@@ -40,23 +35,5 @@ ENTRYPOINT ["/root/startup.sh"]
 
 EXPOSE 3306
 
-# Use an official Python runtime as a parent image
-FROM python:3.5-slim
-
-# Set the working directory to /app
-WORKDIR /app
-
-# Copy the current directory contents into the container at /app
-ADD . /app
-
-# Install any needed packages specified in requirements.txt
-RUN pip install -r requirements.txt
-
-# Make port 3306 available to the world outside this container
-EXPOSE 3306  
-
-# Define environment variable
-ENV NAME World
-
-# Run app.py when the container launches
-CMD ["/usr/bin/mysqld_safe", "python", "app.py"]
+# Run mysql when the container launches
+CMD ["sudo /etc/init.d/mysql start"]
